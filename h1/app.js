@@ -219,11 +219,14 @@ function displaySentiment(result) {
       }
     }
   }
-  // Update UI
+  // Build sentiment string (e.g., "POSITIVE (95.0%)")
+  const sentimentStr = `${label} (${(score * 100).toFixed(1)}%)`;
+
+  // Update UI (as before)
   sentimentResult.classList.add(sentiment);
   sentimentResult.innerHTML = `
         <i class="fas ${getSentimentIcon(sentiment)} icon"></i>
-        <span>${label} (${(score * 100).toFixed(1)}% confidence)</span>
+        <span>${sentimentStr}</span>
     `;
   
   // Build meta object with client info
