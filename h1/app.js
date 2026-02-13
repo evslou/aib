@@ -8,7 +8,7 @@ let apiToken = ""; // kept for UI compatibility, but not used with local inferen
 let sentimentPipeline = null; // transformers.js text-classification pipeline
 
 // Hardcoded Google Sheets Web App URL (replace with your own)
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/.../exec";
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxghVf_h5yeIul4EXcpmwWSdhLKwV0xJWI96CI11RSSPI7qrPhibEQYwxLKlQQdP6q4jQ/exec";
 
 // DOM elements
 const analyzeBtn = document.getElementById("analyze-btn");
