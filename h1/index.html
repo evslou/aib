@@ -161,6 +161,14 @@
             margin: 20px 0;
         }
         
+        .action-result {
+            transition: all 0.3s ease;
+        }
+        
+        .action-result.show {
+            display: block !important;
+        }
+        
         .spinner {
             border: 4px solid rgba(0, 0, 0, 0.1);
             border-left: 4px solid #667eea;
@@ -263,6 +271,10 @@
             <div class="sentiment-result" id="sentiment-result">
                 <i class="fas fa-question-circle icon"></i>
                 <span>Sentiment will appear here</span>
+            </div>
+            <!-- New: Business Action Result -->
+            <div id="action-result" class="action-result" style="display: none; margin-top: 20px; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center;">
+                <!-- Message will appear here -->
             </div>
         </div>
         
