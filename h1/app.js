@@ -7,6 +7,9 @@ let reviews = [];
 let apiToken = ""; // kept for UI compatibility, but not used with local inference
 let sentimentPipeline = null; // transformers.js text-classification pipeline
 
+// Hardcoded Google Sheets Web App URL (replace with your own)
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/.../exec";
+
 // DOM elements
 const analyzeBtn = document.getElementById("analyze-btn");
 const reviewText = document.getElementById("review-text");
@@ -161,7 +164,25 @@ async function analyzeSentiment(text) {
   // Wrap to match [[{ label, score }]] shape expected by displaySentiment
   return [output];
 }
+// Function to log to Google Sheets (now uses hardcoded URL)
+async function logToGoogleSheets(review, sentimentStr, meta) {
+  const formData = new URLSearchParams();
+  formData.append('review', review);
+  formData.append('sentiment', sentimentStr);
+  formData.append('meta', JSON.stringify(meta));
 
+  try {
+    const response = await fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) {
+      console.warn('Failed to log to Google Sheets:', response.statusText);
+    }
+  } catch (error) {
+    console.warn('Error logging to Google Sheets:', error);
+  }
+}
 // Display sentiment result
 function displaySentiment(result) {
   // Default to neutral if we can't parse the result
@@ -198,13 +219,27 @@ function displaySentiment(result) {
       }
     }
   }
-
   // Update UI
   sentimentResult.classList.add(sentiment);
   sentimentResult.innerHTML = `
         <i class="fas ${getSentimentIcon(sentiment)} icon"></i>
         <span>${label} (${(score * 100).toFixed(1)}% confidence)</span>
     `;
+  
+  // Build meta object with client info
+  const meta = {
+    userAgent: navigator.userAgent,
+    platform: navigator.platform,
+    language: navigator.language,
+    screen: `${screen.width}x${screen.height}`,
+    timestamp: new Date().toISOString() // client time for reference
+  };
+
+  // Get the currently displayed review text
+  const review = reviewText.textContent;
+
+  // Send log (fire and forget)
+  logToGoogleSheets(review, sentimentStr, meta);
 }
 
 // Get appropriate icon for sentiment bucket
