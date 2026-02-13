@@ -39,6 +39,46 @@ document.addEventListener("DOMContentLoaded", function () {
   initSentimentModel();
 });
 
+/**
+ * Determines the appropriate business action based on sentiment analysis results.
+ * @param {number} confidence - Confidence score (0.0 to 1.0)
+ * @param {string} label - "POSITIVE" or "NEGATIVE"
+ * @returns {object} { actionCode, uiMessage, uiColor }
+ */
+function determineBusinessAction(confidence, label) {
+    // Normalize score to a 0 (worst) - 1 (best) scale
+    let normalizedScore = 0.5; // default neutral
+    const upperLabel = label ? label.toUpperCase() : '';
+
+    if (upperLabel === "POSITIVE") {
+        normalizedScore = confidence; // e.g., 0.9 -> 0.9 (great)
+    } else if (upperLabel === "NEGATIVE") {
+        normalizedScore = 1.0 - confidence; // e.g., 0.9 conf -> 0.1 (terrible)
+    }
+
+    // Apply business thresholds
+    if (normalizedScore <= 0.4) {
+        return {
+            actionCode: "OFFER_COUPON",
+            uiMessage: "🚨 We are truly sorry. Please accept this 50% discount coupon.",
+            uiColor: "#ef4444" // red
+        };
+    } else if (normalizedScore < 0.7) {
+        return {
+            actionCode: "REQUEST_FEEDBACK",
+            uiMessage: "📝 Thank you! Could you tell us how we can improve?",
+            uiColor: "#6b7280" // gray
+        };
+    } else {
+        return {
+            actionCode: "ASK_REFERRAL",
+            uiMessage: "⭐ Glad you liked it! Refer a friend and earn rewards.",
+            uiColor: "#3b82f6" // blue
+        };
+    }
+}
+
+
 // Initialize transformers.js text-classification pipeline with a supported model
 async function initSentimentModel() {
   try {
@@ -165,10 +205,11 @@ async function analyzeSentiment(text) {
   return [output];
 }
 // Function to log to Google Sheets (now uses hardcoded URL)
-async function logToGoogleSheets(review, sentimentStr, meta) {
+async function logToGoogleSheets(review, sentimentStr, actionCode, meta) {
   const formData = new URLSearchParams();
   formData.append('review', review);
   formData.append('sentiment', sentimentStr);
+  formData.append('action', actionCode);      // new parameter
   formData.append('meta', JSON.stringify(meta));
 
   try {
@@ -183,6 +224,7 @@ async function logToGoogleSheets(review, sentimentStr, meta) {
     console.warn('Error logging to Google Sheets:', error);
   }
 }
+
 // Display sentiment result
 function displaySentiment(result) {
   // Default to neutral if we can't parse the result
@@ -228,21 +270,30 @@ function displaySentiment(result) {
         <i class="fas ${getSentimentIcon(sentiment)} icon"></i>
         <span>${sentimentStr}</span>
     `;
+  // --- NEW: Business Action Logic ---
+  const decision = determineBusinessAction(score, label);
   
-  // Build meta object with client info
+  // Display the action message in the new div
+  const actionDiv = document.getElementById('action-result');
+  actionDiv.textContent = decision.uiMessage;
+  actionDiv.style.backgroundColor = decision.uiColor + '20'; // 20 = 12% opacity for background
+  actionDiv.style.color = decision.uiColor;
+  actionDiv.style.border = `2px solid ${decision.uiColor}`;
+  actionDiv.classList.add('show'); // make it visible
+
+  // --- Logging to Google Sheets ---
   const meta = {
     userAgent: navigator.userAgent,
     platform: navigator.platform,
     language: navigator.language,
     screen: `${screen.width}x${screen.height}`,
-    timestamp: new Date().toISOString() // client time for reference
+    timestamp: new Date().toISOString()
   };
 
-  // Get the currently displayed review text
   const review = reviewText.textContent;
-
-  // Send log (fire and forget)
-  logToGoogleSheets(review, sentimentStr, meta);
+  
+  // Fire-and-forget log with action code
+  logToGoogleSheets(review, sentimentStr, decision.actionCode, meta);
 }
 
 // Get appropriate icon for sentiment bucket
